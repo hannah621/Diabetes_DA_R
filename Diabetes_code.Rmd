@@ -1,0 +1,69 @@
+---
+title: "Final Project-Coding"
+author: "Hyeyeon Hannah Kim"
+date: "12/17/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+diabetes <- read.csv("diabetes.csv")
+head(diabetes)
+names(diabetes)
+diabetes$glyhbCAT <- ifelse(diabetes$glyhb > "7.0", 1, 0)
+table(diabetes$glyhbCAT) #positive(1): positive diagnosis of diabetes, negative(0):negative diagnosis of diabetes
+addmargins(table(diabetes$glyhbCAT))
+```
+
+#glyhbCAT~gender
+```{r}
+tab1p <- table(diabetes$glyhbCAT, diabetes$gender)
+tab1p
+addmargins(tab1p)
+tab1pa <- prop.table(tab1p, 1)
+addmargins(tab1pa)
+barplot(t(tab1pa), cex.names = 1.0, legend.text = T, args.legend = list(x=1.16,y=1.2,horiz=T, cex=0.7), xlab = 'Glycosolated Hemoglobin', ylab = 'Proportion of Gender')
+```
+
+#glyhbCAT~agenew
+```{r}
+diabetes$agenew <- cut(diabetes$age, c(0,25,50,75,100))
+tab2p <- table(diabetes$glyhbCAT, diabetes$agenew)
+tab2p
+tab2pa <- prop.table(tab2p, 1)
+addmargins(tab2pa)
+barplot(t(tab2pa), cex.names = 0.8, legend.text= T, args.legend = list(x=2.15, y=1.2, horiz=T, cex=0.7), xlab = "Glycosolated Hemoglobin", ylab = "Proportion of Age")
+```
+
+##three way table(glyhbCAT, age, gender)
+```{r}
+diabetes$agenew2 <- cut(diabetes$age, c(0,50,100))
+tab3p <- table(diabetes$glyhbCAT, diabetes$agenew2, diabetes$gender)
+tab3p
+addmargins(tab3p)
+source("local.odds.R")
+local.odds(tab3p[1,,]) #conditional odds ratios of agenew and gender at negative of glyhbCAT
+local.odds(tab3p[2,,]) #conditional odds ratios of agenew and gender at positive of glyhbCAT
+```
+
+#stepwise algorithms
+```{r}
+glm3p <- glm(glyhbCAT~ chol+stab.glu+hdl+ratio+agenew+gender+height+weight+bp.1s+bp.1d+bp.2s+bp.2d+waist+hip+time.ppn, data = diabetes, family=binomial(link = 'logit'))
+summary(glm3p)
+glm3pa <- glm(glyhbCAT~1, data=diabetes, family=binomial(link = 'logit'))
+step(glm3pa, scope=list(lower=glm3pa, upper=glm3p), direction="forward")
+#AIC: 104.9, age, stab.glu 
+step(glm3pa, scope=list(lower=glm3pa, upper=glm3p), direction = "backward")
+#AIC: 107.2, just the intercept
+step(glm3pa, scope = list(lower=glm3pa, upper=glm3p), direction = "both")
+#AIC: 104.9, age, stab.glu 
+glm3paa <- glm(glyhbCAT~agenew+gender, data=diabetes, family=binomial(link='logit'))
+summary(glm3paa)
+```
+
+
+
+
